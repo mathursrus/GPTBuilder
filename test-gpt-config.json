@@ -1,0 +1,10 @@
+{
+  "name": "Try this GPT",
+  "description": "Test GPT",
+  "instructions": "You are a test for Sid's GPT builder script",
+  "conversation_starters": [
+    "What do you do?",
+    "Who is Sid?"
+  ],
+  "openapi_spec_file": "test_openapi.json"
+} 

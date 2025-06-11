@@ -1,0 +1,15 @@
+# GPT Builder Script Dependencies
+
+# Core browser automation
+playwright>=1.40.0
+
+# Standard library dependencies (included with Python)
+# asyncio - Built-in
+# json - Built-in  
+# re - Built-in
+# time - Built-in
+# os - Built-in
+# platform - Built-in
+# warnings - Built-in
+# typing - Built-in (Python 3.5+)
+# logging - Built-in 

@@ -1,0 +1,37 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sid's trial API",
+    "description": "This API is testing Sid's GPT builder script.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://www.example.com",
+      "description": "Example endpoint"
+    }
+  ],
+  "paths": {
+    "/test_api": {
+      "get": {
+        "operationId": "test_api",
+        "summary": "Test API",
+        "parameters": [
+          {
+            "name": "test",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    }
+  }
+}
