@@ -10,9 +10,18 @@ import time
 import os
 import platform
 import warnings
-from playwright.async_api import async_playwright, Page, Browser
+import random
 from typing import Optional, Dict, Any
 import logging
+
+from playwright.async_api import async_playwright, Page, Browser
+
+# Python 3.12 compatibility fixes
+import sys
+if sys.version_info >= (3, 12):
+    # Suppress new warnings in Python 3.12
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="playwright")
+    warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 # Suppress harmless Windows asyncio cleanup warnings
 if platform.system() == "Windows":
@@ -72,26 +81,20 @@ class GPTManager:
         return False
         
     async def initialize_browser(self):
-        """Initialize Playwright browser with human-like settings"""
-        # Set persistent browser location for PyInstaller compatibility
-        persistent_browser_path = os.path.join(os.path.expanduser("~"), ".playwright-browsers")
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = persistent_browser_path
-        
+        """Initialize Playwright browser with simple settings for older version"""
         playwright = await async_playwright().start()
         
-        # Use more human-like browser settings to avoid CAPTCHAs
+        # Use simple browser settings that worked with older Playwright versions
         self.browser = await playwright.chromium.launch(
             headless=False,  # Keep visible for user to see login process
             args=[
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
                 '--disable-blink-features=AutomationControlled',  # Hide automation
-                '--disable-web-security',
-                '--disable-features=VizDisplayCompositor'
+                '--no-sandbox',
+                '--disable-dev-shm-usage'
             ]
         )
         
-        # Create context with realistic settings
+        # Create context with simple settings
         self.context = await self.browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             locale='en-US',
@@ -194,7 +197,7 @@ class GPTManager:
             # Wait for either login button or already logged in state
             try:
                 # Check if login button is present (user not logged in)
-                login_button = await self.page.wait_for_selector('button[data-testid="login-button"]', timeout=2000)
+                login_button = await self.page.wait_for_selector('button[data-testid="login-button"]', timeout=3000)
                 logger.info("Login button found, clicking to start login process...")   
             except:
                 # Login button not found, user is already logged in
@@ -206,11 +209,12 @@ class GPTManager:
                 await login_button.click()
                 
                 logger.info("Please complete the login process in the browser window...")
+                logger.info("If you see a CAPTCHA, please complete it manually - the script will continue automatically")
                 logger.info("Waiting for login to complete...")
                 
-                # Wait for the page to display
-                await asyncio.sleep(5)
-                await self.page.wait_for_selector('[data-testid="profile-button"]', timeout=120000)
+                # Wait for the page to display profile button (indicating successful login)
+                await asyncio.sleep(3)
+                await self.page.wait_for_selector('[data-testid="profile-button"]', timeout=180000)  # 3 minutes
                 
                 # Check if browser is still alive after login
                 await self.ensure_browser_alive()
@@ -218,7 +222,6 @@ class GPTManager:
                 logger.info("Login successful!")
                 return True
             except Exception as e:
-                # Login button not found, user is already logged in
                 logger.info("Did not login within time limit...exiting")
                 raise Exception(f"Login failed: {e}")       
         except BrowserCrashedException:
@@ -240,6 +243,12 @@ class GPTManager:
             
             # Check if browser is still alive after navigation
             await self.ensure_browser_alive()
+            
+            # Debug: Check what page we're actually on
+            current_url = self.page.url
+            page_title = await self.page.title()
+            logger.info(f"Current URL: {current_url}")
+            logger.info(f"Page title: {page_title}")
             
             logger.info("GPT builder loaded successfully!")
             return True
@@ -343,6 +352,18 @@ class GPTManager:
             # Fill in GPT name
             logger.info("Setting GPT name...")
             try:
+                # Debug: Check what input fields are available
+                all_inputs = await self.page.query_selector_all('input, textarea')
+                logger.info(f"Found {len(all_inputs)} input fields on page")
+                
+                for i, input_elem in enumerate(all_inputs[:5]):  # Check first 5 inputs
+                    try:
+                        placeholder = await input_elem.get_attribute('placeholder')
+                        input_type = await input_elem.get_attribute('type')
+                        logger.info(f"Input {i+1}: type='{input_type}', placeholder='{placeholder}'")
+                    except:
+                        pass
+                
                 name_input = await self.page.wait_for_selector('input[placeholder*="Name"], input[placeholder*="name"], textarea[placeholder*="Name"]', timeout=5000)
                 await name_input.click()
                 await self.page.keyboard.press('Control+a')
@@ -351,7 +372,8 @@ class GPTManager:
                 await self.ensure_browser_alive()
             except Exception as e:
                 logger.error(f"Failed to fill GPT name: {e}")
-                return False
+                # Don't return False - continue with other fields
+                logger.info("Continuing despite name field error...")
             
             # Fill in description using the specific data-testid selector
             logger.info("Setting GPT description...")
@@ -698,9 +720,9 @@ class GPTManager:
                     except:
                         continue
             
-            # Look for and click any "Test" or "Save" button for the action
+            # Look for and click any "Create" or "Save" button for the action
             action_save_selectors = [
-                'button:has-text("Test")',
+                'button:has-text("Create")',
                 'button:has-text("Save")',
                 'button:has-text("Update")'
             ]

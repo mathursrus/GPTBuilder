@@ -1,0 +1,7 @@
+# Working configuration from venv311 (Python 3.11.6)
+playwright==1.41.2
+
+# These are the dependencies that come with playwright 1.41.2
+greenlet>=1.0
+pyee>=9.0.4,<12.0.0
+typing-extensions 

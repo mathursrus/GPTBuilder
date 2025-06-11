@@ -29,6 +29,7 @@ MANIFEST
 
 # Virtual environments
 venv/
+venv_working/
 env/
 ENV/
 env.bak/
@@ -52,6 +53,7 @@ Thumbs.db
 
 # Playwright browsers (large files, can be reinstalled)
 .playwright-browsers/
+ms-playwright/
 
 # Temporary files
 *.tmp
@@ -63,4 +65,11 @@ tmp/
 *-config.json
 !test-gpt-config.json
 *_openapi.json
-!test_openapi.json 
+!test_openapi.json
+
+# Backup files
+*.bak
+*.backup
+
+# Windows batch file logs
+*.bat.log 
